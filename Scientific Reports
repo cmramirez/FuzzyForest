@@ -1,0 +1,539 @@
+library(readstata13)
+library(sas7bdat)
+library(MASS)
+setwd("~/Box/Fuzzy Forests/CHIS Fuzzy Language Paper")
+#CHIS 2013-2014 data as given by Mike
+rm(list=ls()) #will remove ALL objects
+
+#data <- read.dta13("data_chis1314_v1.dta")
+#names(data)
+#write.csv(data, file="data_1314.csv")
+#data2 <-read.sas7bdat("adult.sas7bdat")
+data13 <-read.sas7bdat("adult13.sas7bdat")
+write.csv(data13, file="data_2013.csv")
+data14<-read.sas7bdat("adult14.sas7bdat")
+write.csv(data14, file="data_2014.csv")
+#income support program participation
+
+#al2= receiving tanf/calworks
+#al5 food stamps
+#al6= ssi
+#al22= soc sec disability
+#al32 wrokers comp
+#al18a ss or pension
+
+
+table(data$al2)
+table(data2$AL2)
+
+table(data$al5)
+table(data2$AL5)
+
+table(data$al6)
+table(data2$AL6)
+
+table(data$al22)
+table(data2$AL22)
+
+table(data$al32)
+table(data2$AL32)
+
+table(data$al18a)
+table(data2$AL18A)
+
+table(data$al2, data$al5)
+table(data$al2, data$al6)
+table(data$al2, data$al22)
+table(data$al2, data$al32)
+table(data$al2, data$al18a)
+
+t1=table(data$citizen2, data$al2)
+chisq.test(t1)
+t2=table(data13$CITIZEN2, data13$AL2)
+chisq.test(t2)
+
+table(data$srsex, data$al2)
+table(data$intvlang, data$al2)
+table(data$intvlang)
+table(data$intvlang, data$al2, data$citizen2)
+
+table(data13$INTVLANG, data13$AL2, data13$CITIZEN2)
+
+t3=table(data13$INTVLANG, data13$AL2)
+chisq.test(t3)
+
+t4=table(data13$INTVLANG, data13$AM19)
+t5=table(data13$INTVLANG, data13$AM20)
+t6=table(data13$INTVLANG, data13$AM21)
+t7=table(data13$INTVLANG, data13$AK28)
+t8=table(data13$INTVLANG, data13$AM36)
+t9=table(data13$INTVLANG, data13$AM39)
+t10=table(data13$INTVLANG, data13$AM40)
+t11=table(data13$INTVLANG, data13$AB1)
+
+# ER asthma no dr
+t12=table(data13$INTVLANG, data13$AB106_P)
+
+# asthma 
+t13=table(data13$INTVLANG, data13$AB17)
+
+#ER daibetes no dr
+t14=table(data13$INTVLANG, data13$AB110_P)
+#ER diabetes
+t15=table(data13$INTVLANG, data13$AB109)
+#indicator diabetes
+t16=table(data13$INTVLANG, data13$AB22)
+
+#ER CVD no dr
+t17=table(data13$INTVLANG, data13$AB116_P1)
+#ER CVD
+t18=table(data13$INTVLANG, data13$AB115)
+#indicatorCVD
+t19=table(data13$INTVLANG, data13$AB34)
+
+#HBP
+t20=table(data13$INTVLANG, data13$AB29)
+#ER CVD
+t21=table(data13$INTVLANG, data13$AB115)
+
+#usual source of health care
+t22=table(data13$INTVLANG, data13$AH1)
+#PERSONAL DR AS MAIN CARE
+t23=table(data13$INTVLANG, data13$AJ77)
+#COST/NO INSUR DELAYED PRESCRIPTION
+t24=table(data13$INTVLANG, data13$AJ19)
+#COST/NO INSUR DELAYED CARE
+t25=table(data13$INTVLANG, data13$AJ20)
+# # times ER visit
+t26=table(data13$INTVLANG, data13$AH95_P1)
+# USUAL SOURCE OF CARE OTHER THAN  ER visit
+t27=table(data13$INTVLANG, data13$USOC)
+
+#educational attainment
+t28=table(data13$INTVLANG, data13$AHEDC_P1)
+
+#FOOD SECURITY 2 LEVELS
+t29=table(data13$INTVLANG, data13$FSLEVCB)
+t31=table(data13$INTVLANG, data13$FSLEV)
+#OVERWEIGHT
+t30=table(data13$INTVLANG, data13$OVRWT)
+
+#create new outcome variable
+data13$good[data13$AB1 <4] <- 1
+data13$good[data13$AB1 >3] <-0
+data13$noneng[data13$INTVLANG >1] <-1
+data13$noneng[data13$INTVLANG <2] <-0
+
+y2=data13$noneng
+y2=as.factor(y2)
+
+table(data13$good, data13$AB1)
+table(data13$good)
+y=data13$good
+table(y)
+y=as.factor(y)
+names=c("data13$AB1", "data13$good", "data13$PUF1Y_ID")
+data13=data.frame(data13)
+X=data13
+X=subset(data13, select=-c(data13$AB1, data13$good))
+X=subset(X, select=-c(good))
+
+
+Z=data13
+Z2=Z[,-c(251)]
+#str(Z, list.len=ncol(Z))
+Z2=Z2[,-c(279)]
+Z2=Z2[,-c(416:421)]
+#################fuzzy forests part
+library(randomForest)
+library(WGCNA)
+library(fuzzyforest)
+library(rpart)
+library(earth)
+library(plotmo)
+library(plotrix)
+set.seed(1)
+library(devtools)
+install_Github("daniel-conn17/FuzzyForests")
+library(randomForest)
+library(WGCNA)
+library(fuzzyforest)
+
+fitrf <-randomForest(x=X, y=y, ntree=500, mtry=120, method='class')
+
+fitrf2 <-randomForest(x=Z2, y=y2, ntree=500, mtry=120, method='class')
+
+fitrf
+Call:
+  randomForest(x = Z, y = y, ntree = 500, mtry = 120, method = "class") 
+Type of random forest: classification
+Number of trees: 500
+No. of variables tried at each split: 120
+
+OOB estimate of  error rate: 14.3%
+Confusion matrix:
+  0     1 class.error
+0 2186  2093  0.48913297
+1  871 15574  0.05296443
+
+#variable coming in as a high level factor
+#str(X)
+#str(Z, list.len=ncol(Z))
+
+varImpPlot(fitrf,type=2)
+varImpPlot(fitrf)
+varImpPlot(fitrf2)
+tuneRF(x=X, y, mtryStart=12, ntreeTry=1000, stepFactor=2, improve=.05,
+trace=TRUE, plot=TRUE, doBest=FALSE)
+
+mtry  OOBError
+6.OOB     6 0.1504053
+12.OOB   12 0.1479927
+24.OOB   24 0.1450492
+
+
+
+######################################################################################
+####################################  FF  ############################################
+######################################################################################
+
+datExpr0=as.data.frame(X)
+names(datExpr0)
+datExpr1=datExpr0[,-c(336:417)]
+names(datExpr1)
+
+library("dplyr")
+dat2 <-select_if(datExpr1, is.numeric)
+gsg = goodSamplesGenes(dat2, verbose = 3)
+gsg$allOK
+
+
+sampleTree = hclust(dist(dat2), method = "average");
+
+sizeGrWindow(12,9)
+
+par(cex = 0.6);
+par(mar = c(0,4,2,0))
+
+plot(sampleTree, main = 
+       "Sample clustering to detect outliers", sub="",
+     xlab="", cex.lab = 1.5, cex.axis = 1.5, cex.main = 2)
+
+powers = c(c(1:10), seq(from = 11, to=30, by=1))
+sft = pickSoftThreshold(dat2, powerVector = powers, verbose = 5, networkType = "signed")
+sizeGrWindow(9, 5)
+par(mfrow = c(1,2));
+cex1 = 0.9;
+plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+     main = paste("Scale independence"));
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+     labels=powers,cex=cex1,col="red");
+
+abline(h=0.9,col="red")
+plot(sft$fitIndices[,1], sft$fitIndices[,5],
+     xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
+     main = paste("Mean connectivity"))
+text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=cex1,col="red")
+softPower = 7; #r2=90
+adjacency = adjacency(dat2, power = softPower, type = "signed");
+TOM = TOMsimilarity(adjacency, TOMType = "signed");
+dissTOM = 1-TOM
+
+#plot TOM matrix
+TaxaTree = hclust(as.dist(dissTOM), method = "average");
+sizeGrWindow(12,9)
+plot(TaxaTree, xlab="", sub="", main = "Taxa clustering on TOM-based dissimilarity",
+     labels = FALSE, hang = 0.04);
+
+minModuleSize = 15;
+
+dynamicMods = cutreeDynamic(dendro = TaxaTree, distM = dissTOM,
+                            deepSplit = 2, pamRespectsDendro = FALSE,
+                            minClusterSize = minModuleSize);
+
+#Convert numeric labels into colors:
+  
+  dynamicColors = labels2colors(dynamicMods)
+table(dynamicColors)
+
+#minmodule=10 gives 14 modules, 20 gives 7, minmod=15 -> 10 modules
+
+sizeGrWindow(8,6)
+plotDendroAndColors(TaxaTree, dynamicColors, "Dynamic Tree Cut",
+                    dendroLabels = FALSE, hang = 0.03,
+                    addGuide = TRUE, guideHang = 0.05,
+                    main = "Taxa dendrogram and module colors")
+
+
+MEList = moduleEigengenes(dat2, colors = dynamicColors) #ist principle component of module matrix
+MEs = MEList$eigengenes
+
+#Calculate dissimilarity of module eigengenes:
+  MEDiss = 1-cor(MEs);
+  
+  METree = hclust(as.dist(MEDiss), method = "average");
+  #Plot the result:
+    
+    sizeGrWindow(7, 6)
+  plot(METree, main = "",
+       xlab = "", sub = "")
+  
+  #MEDissThres = 0.50    #asking for 50% similarityto merge  # very independent
+  #abline(h=MEDissThres, col = "red")
+
+## vizualizing the brown module
+  
+  # Recalculate topological overlap
+  TOM = TOMsimilarityFromExpr(dat2, power = 6);
+  
+  #dynamicColors has the module membership
+  probes = names(dat2)
+  test=cbind(dynamicColors,probes)
+  
+test=as.data.frame(test)
+
+ brown <- probes[test$dynamicColors=="brown"]
+ tur <- probes[test$dynamicColors=="turquoise"] 
+ black <- probes[test$dynamicColors=="black"]
+ green <- probes[test$dynamicColors=="green"]
+ blue <- probes[test$dynamicColors=="blue"]
+ red <- probes[test$dynamicColors=="red"]
+ grey <- probes[test$dynamicColors=="grey"]
+
+ pink <- probes[test$dynamicColors=="pink"]
+ 
+ yellow <- probes[test$dynamicColors=="yellow"]
+ 
+ 
+  
+##################################
+
+
+
+#frist run a uniform FF-- ie 5 random modules
+groups <- c(rep(1:5,66),1,2,3,4)
+
+
+X=dat2
+module_membership <- groups
+n <- dim(X)[1]
+p <- dim(X)[2]
+mtry_factor <- 2
+drop_fraction <- .2
+number_selected <- 30
+keep_fraction <- .05
+min_ntree <- 250
+ntree_factor <- 1
+final_ntree <- 1000
+minModuleSize <- 15
+screen_params <- screen_control(drop_fraction=drop_fraction,
+                                keep_fraction=keep_fraction,
+                                min_ntree=min_ntree, mtry_factor=mtry_factor,
+                                ntree_factor=ntree_factor)
+select_params <- select_control(drop_fraction=drop_fraction,
+                                number_selected=number_selected,
+                                min_ntree=min_ntree, mtry_factor=mtry_factor,
+                                ntree_factor=ntree_factor)
+
+print(paste('minModuleSize:  ', minModuleSize,sep=""))
+mtry_factor <- 2; drop_fraction <- .25; number_selected <- 30
+keep_fraction <- .1; min_ntree <- 500; ntree_factor <- 5
+final_ntree <- 250;
+screen_params <- screen_control(drop_fraction=drop_fraction,
+                                keep_fraction=keep_fraction,
+                                min_ntree=min_ntree, mtry_factor=mtry_factor,
+                                ntree_factor=ntree_factor)
+select_params <- select_control(drop_fraction=drop_fraction,
+                                number_selected=number_selected,
+                                min_ntree=min_ntree, mtry_factor=mtry_factor,
+                                ntree_factor=ntree_factor)
+
+
+
+set.seed(1234)
+fitXran <- ff(X, y, module_membership=module_membership,
+           screen_params=screen_control(min_ntree=1, ntree_factor=1, keep_fraction = .25),
+           select_params=select_control(min_ntree=1, ntree_factor=1, number_selected = 20),
+           num_processors=4)
+
+
+fitran <-fitXran$final_rf
+varImpPlot(fitran, main="", type=1)
+
+
+
+
+
+if ab109= 1 or ab110_p=1 or ab111=1 or ab112=1 or ab113=1 or
+ab115=1 or ab116_p1=1 or ab117=1 or ab118=1 or ab119 =1 or ab22=1
+or ab24=1 or ab25=1 or ab34=1 or ab52=1 then bad=1; else bad=0;
+if intvlang =1 then lang=1; 
+if intvlang= 2 then lang=2;
+if intvlang=3 then lang=3;
+if intvlang=4 then lang=4;
+if intvlang > 4 then lang=5;
+if intvlang =1 then span=0; 
+if intvlang =2 then span=2;
+if intvlang > 2 then span=1;
+
+/*health outcomes general*/
+  if ab1=1 or ab1=2 or ab1=3 then good=1;
+if ab1 =4 or ab1=5 then good=0;
+lincome=log(ak22_p + 1);
+sincome=sqrt(ak22_p);
+run;
+
+##############################################################################################
+####Module based ff
+
+save.image(file="module.RData") 
+
+
+X=dat2
+module_membership <- dynamicColors
+n <- dim(X)[1]
+p <- dim(X)[2]
+mtry_factor <- 2
+drop_fraction <- .2
+number_selected <- 30
+keep_fraction <- .15
+min_ntree <- 250
+ntree_factor <- 1
+final_ntree <- 1000
+minModuleSize <- 15
+screen_params <- screen_control(drop_fraction=drop_fraction,
+                                keep_fraction=keep_fraction,
+                                min_ntree=min_ntree, mtry_factor=mtry_factor,
+                                ntree_factor=ntree_factor)
+select_params <- select_control(drop_fraction=drop_fraction,
+                                number_selected=number_selected,
+                                min_ntree=min_ntree, mtry_factor=mtry_factor,
+                                ntree_factor=ntree_factor)
+
+print(paste('minModuleSize:  ', minModuleSize,sep=""))
+mtry_factor <- 1; drop_fraction <- .15; number_selected <- 30
+keep_fraction <- .1; min_ntree <- 500; ntree_factor <- 5
+final_ntree <- 350;
+screen_params <- screen_control(drop_fraction=drop_fraction,
+                                keep_fraction=keep_fraction,
+                                min_ntree=min_ntree, mtry_factor=mtry_factor,
+                                ntree_factor=ntree_factor)
+select_params <- select_control(drop_fraction=drop_fraction,
+                                number_selected=number_selected,
+                                min_ntree=min_ntree, mtry_factor=mtry_factor,
+                                ntree_factor=ntree_factor)
+
+
+
+set.seed(12345)
+fitX <- ff(X, y, module_membership=module_membership,
+           screen_params=screen_control(min_ntree=1, ntree_factor=1, keep_fraction = .65),
+           select_params=select_control(min_ntree=1, ntree_factor=1, number_selected = 20),
+           num_processors=4)
+
+
+fitX
+feature_name variable_importance module_membership
+1       DISABLE              0.0181             black
+2          AD57              0.0077             black
+3         AJ108              0.0064             brown
+4          AG21              0.0060             brown
+5      INTVLANG              0.0055             brown
+6          AD52              0.0054             black
+7      DISTRESS              0.0050         turquoise
+8       DSTRSYR              0.0048         turquoise
+9        AK2_P1              0.0047             brown
+10        AJ110              0.0047             green
+11        AJ111              0.0047             brown
+12         AD53              0.0045             black
+13       AK22_P              0.0045              blue
+14     DSTRS_P1              0.0044         turquoise
+15        AD42W              0.0041              blue
+16         AJ33              0.0036             black
+17     AHEDC_P1              0.0036              blue
+18     LNGHM_P1              0.0035             brown
+19      ACMDNUM              0.0034               red
+20         AB25              0.0032            yellow
+
+xf <- fitX$feature_list$variable_importance[order(fitX$feature_list$variable_importance),] # sort by vimp
+
+dotchart(xf,labels=fitX$feature_list$feature_name,cex=.7,
+         main="Fuzzy Forest Variable Ranking", 
+         xlab="Variable Important")
+
+dotchart(fitX$feature_list$variable_importance,labels=fitX$feature_list$feature_name,cex=.7,
+         main="Fuzzy Forest Variable Ranking", 
+         xlab="Variable Importance")
+
+vimpff <-data.frame(fitX$feature_list$feature_name,fitX$feature_list$variable_importance)
+
+xf <- vimpff[order(vimpff$fitX.feature_list.variable_importance),]
+
+
+dotchart(xf$fitX.feature_list.variable_importance,labels=xf$fitX.feature_list.feature_name,cex=.7,
+         main="Fuzzy Forest Variable Ranking", 
+         xlab="Variable Importance")
+
+fitff <-fitX$final_rf
+varImpPlot(fitff, main="", type=1)
+
+save.image(file="module_new.RData") 
+load(file="module_new.RData")
+
+
+graphics.off() 
+par("mar") 
+par(mar=c(1,1,1,1))
+
+names=rownames(fitff$importance)
+ par(mfrow=c(7, 3), xpd=NA)
+ for (name in names)
+    partialPlot(fitff, dat2, eval(name), which.class=1, main=name, xlab=name)
+
+names=c(fitff$forest$xlevels$INTVLANG)
+ par(mfrow=c(5, 3), xpd=NA)
+ for (name in names)
+    partialPlot(fitrf, dat2, eval(name), main=name, xlab=name,ylim=c(-.2,.9))
+
+
+if ab109= 1 or ab110_p=1 or ab111=1 or ab112=1 or ab113=1 or
+ab115=1 or ab116_p1=1 or ab117=1 or ab118=1 or ab119 =1 or ab22=1
+or ab24=1 or ab25=1 or ab34=1 or ab52=1 then bad=1; else bad=0;
+if intvlang =1 then lang=1; 
+if intvlang= 2 then lang=2;
+if intvlang=3 then lang=3;
+if intvlang=4 then lang=4;
+if intvlang > 4 then lang=5;
+if intvlang =1 then span=0; 
+if intvlang =2 then span=2;
+if intvlang > 2 then span=1;
+
+/*health outcomes general*/
+  if ab1=1 or ab1=2 or ab1=3 then good=1;
+if ab1 =4 or ab1=5 then good=0;
+lincome=log(ak22_p + 1);
+sincome=sqrt(ak22_p);
+run;
+
+
+##################################################################################################################
+################################# PREDICTION  #########################################
+##################################################################################################################
+##################################################################################################################
+
+
+#create new outcome variable
+data14$good[data14$AB1 <4] <- 1
+data14$good[data14$AB1 >3] <-0
+y3=data14$good
+
+y3=as.factor(y3)
+table(y3)
+
+#Need to take out AB1 and good
+X3=data14[,-c(2, 440)]
+
+ff.pred <- predict(fitX, X3)
+table(ff.pred, y3)
+##################################################################################################################
